@@ -1,0 +1,8 @@
+cache:
+  key: ${ENV}
+  paths:
+    - $CLOUD/$ENV/.terraform/
+
+stages:
+  - plan
+  - apply

@@ -1,0 +1,34 @@
+stages:
+  - build
+  - trigger
+
+jsonnet:
+  stage: build
+  tags:
+    - terraform
+  script:
+    - jsonnet gitlab-ci.jsonnet > generated-gitlab-ci.yml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  artifacts:
+    paths:
+      - generated-gitlab-ci.yml
+
+trigger-tests:
+  stage: trigger
+  variables:
+    PIPELINE_SOURCE: $CI_PIPELINE_SOURCE
+    COMMIT_REF_NAME: $CI_COMMIT_REF_NAME
+    DEFAULT_BRANCH: $CI_DEFAULT_BRANCH
+  trigger:
+    include:
+      - local: $CI_PROJECT_DIR/child-tpl.yml
+      - artifact: generated-gitlab-ci.yml
+        job: jsonnet
+    strategy: depend
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  needs:
+    - jsonnet
